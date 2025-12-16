@@ -16,6 +16,7 @@ export default function Profile() {
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState(avatars[0]);
   const [isKids, setIsKids] = useState(false);
+  const [pin, setPin] = useState("");
 
   const activeProfileId = localStorage.getItem("activeProfileId");
 
@@ -24,14 +25,31 @@ export default function Profile() {
     setProfiles(stored);
   }, []);
 
-  // Switch profile
+  // SWITCH PROFILE
   const switchProfile = (id) => {
     localStorage.setItem("activeProfileId", id);
-   navigate("/", { replace: true });
- // reload cleanly
+    navigate("/", { replace: true });
   };
 
-  // Add new profile
+  // DELETE PROFILE
+  const handleDelete = (id) => {
+    if (!window.confirm("Delete this profile permanently?")) return;
+
+    const updated = profiles.filter((p) => p.id !== id);
+    localStorage.setItem("profiles", JSON.stringify(updated));
+
+    localStorage.removeItem(`watchLater_${id}`);
+    localStorage.removeItem(`activity_${id}`);
+
+    if (id === activeProfileId && updated.length) {
+      localStorage.setItem("activeProfileId", updated[0].id);
+    }
+
+    setProfiles(updated);
+    navigate("/", { replace: true });
+  };
+
+  // ADD PROFILE
   const addProfile = () => {
     if (!name.trim()) return;
 
@@ -45,32 +63,64 @@ export default function Profile() {
       name,
       avatar,
       isKids,
+      pin: pin || null,
     };
 
     const updated = [...profiles, newProfile];
     localStorage.setItem("profiles", JSON.stringify(updated));
     localStorage.setItem("activeProfileId", newProfile.id);
 
-    window.location.href = "/";
+    navigate("/", { replace: true });
   };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6">
+      <button
+        onClick={() => navigate("/", { replace: true })}
+        className="mb-4 text-gray-300 hover:text-white"
+      >
+        ← Back
+      </button>
+
       <h1 className="text-2xl font-bold mb-6">Profiles</h1>
 
-      {/* Profile list */}
+      {/* PROFILE GRID */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
         {profiles.map((p) => (
           <div
             key={p.id}
-            className={`bg-gray-800 p-4 rounded text-center ${
+            className={`relative bg-gray-800 p-4 rounded text-center ${
               p.id === activeProfileId ? "border-2 border-red-600" : ""
             }`}
           >
+            {/* EDIT */}
+            <button
+              onClick={() =>
+                navigate(`/profile/edit/${p.id}`, { replace: true })
+              }
+              className="absolute top-2 right-2 text-gray-400 hover:text-white"
+              title="Edit profile"
+            >
+              ✏️
+            </button>
+
+            {/* DELETE */}
+            {profiles.length > 1 && p.id !== activeProfileId && (
+              <button
+                onClick={() => handleDelete(p.id)}
+                className="absolute top-2 left-2 text-gray-400 hover:text-red-500"
+                title="Delete profile"
+              >
+                🗑
+              </button>
+            )}
+
             <img
               src={p.avatar}
               className="w-20 h-20 rounded mx-auto mb-2"
+              alt={p.name}
             />
+
             <p className="font-semibold">{p.name}</p>
 
             {p.isKids && (
@@ -89,7 +139,7 @@ export default function Profile() {
         ))}
       </div>
 
-      {/* Add profile */}
+      {/* ADD PROFILE */}
       {profiles.length < 3 && (
         <>
           <button
@@ -105,6 +155,15 @@ export default function Profile() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Profile name"
+                className="w-full mb-3 px-3 py-2 rounded bg-gray-700"
+              />
+
+              <input
+                type="password"
+                maxLength={4}
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+                placeholder="Set 4-digit PIN (optional)"
                 className="w-full mb-3 px-3 py-2 rounded bg-gray-700"
               />
 
@@ -142,48 +201,6 @@ export default function Profile() {
           )}
         </>
       )}
-
-      {/* edit profile */}
-    {profiles.map((p) => (
-  <div
-    key={p.id}
-    className={`relative bg-gray-800 p-4 rounded text-center transition hover:scale-105 ${
-      p.id === activeProfileId ? "border-2 border-red-600" : ""
-    }`}
-  >
-    {/* ✏️ EDIT ICON ON SAME CARD */}
-    <button
-      onClick={() => navigate(`/profile/edit/${p.id}`)}
-      className="absolute top-2 right-2 text-gray-400 hover:text-white"
-      title="Edit profile"
-    >
-      ✏️
-    </button>
-
-    <img
-      src={p.avatar}
-      className="w-20 h-20 rounded mx-auto mb-2"
-      alt={p.name}
-    />
-
-    <p className="font-semibold">{p.name}</p>
-
-    {p.isKids && (
-      <span className="text-xs text-yellow-400">Kids</span>
-    )}
-
-    {p.id !== activeProfileId && (
-      <button
-        onClick={() => switchProfile(p.id)}
-        className="mt-3 px-4 py-1 bg-red-600 rounded text-sm"
-      >
-        Switch
-      </button>
-    )}
-  </div>
-))}
-
-
     </div>
   );
 }

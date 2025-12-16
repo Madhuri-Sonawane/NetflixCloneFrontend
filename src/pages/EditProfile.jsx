@@ -22,7 +22,7 @@ export default function EditProfile() {
     const profile = profiles.find((p) => p.id === id);
 
     if (!profile) {
-      navigate("/profile");
+      navigate("/", { replace: true });
       return;
     }
 
@@ -57,6 +57,19 @@ export default function EditProfile() {
     localStorage.setItem("profiles", JSON.stringify(updated));
     navigate("/profile");
   };
+
+  useEffect(() => {
+  const profiles = JSON.parse(localStorage.getItem("profiles")) || [];
+  const profile = profiles.find((p) => p.id === id);
+
+  if (profile?.pin) {
+    const entered = prompt("Enter profile PIN");
+    if (entered !== profile.pin) {
+      navigate("/", { replace: true });
+    }
+  }
+}, [id, navigate]);
+
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center p-6">
